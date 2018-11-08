@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<beans>
+    <bean id = "TestObject1" class="com.gy.di.TestObject1" />
+    <bean id = "TestObject2" class="com.gy.di.TestObject2" />
+    <bean id = "TestObject3" class="com.gy.di.TestObject3" />
+    <bean id = "TestService" class = "com.gy.di.TestServiceImpl" />
+</beans>

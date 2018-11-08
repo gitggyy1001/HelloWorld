@@ -1,0 +1,168 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:catch="http://www.springframework.org/schema/cache"
+       xmlns:c="http://www.springframework.org/schema/c"
+       xmlns:jms="http://www.springframework.org/schema/jms"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+   http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+   http://www.springframework.org/schema/context
+   http://www.springframework.org/schema/context/spring-context-3.0.xsd
+   http://www.springframework.org/schema/cache
+   http://www.springframework.org/schema/cache/spring-cache.xsd
+   http://www.springframework.org/schema/jms
+   http://www.springframework.org/schema/jms/spring-jms.xsd
+   http://www.springframework.org/schema/aop
+   http://www.springframework.org/schema/aop/spring-aop-4.3.xsd
+   http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.0.xsd
+   ">
+
+    <context:annotation-config/>
+    <context:component-scan base-package="com.gy" />
+    <catch:annotation-driven  cache-manager="cacheManager123"/>
+    <context:property-placeholder location="classpath:redis.properties" />
+
+
+    <aop:aspectj-autoproxy />
+
+
+    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="prefix" value="/view/" />
+        <property name="suffix" value=".jsp" />
+    </bean>
+
+
+    <bean id="dataSource" class="org.springframework.jndi.JndiObjectFactoryBean">
+    <property name="jndiName">
+    <value>java:comp/env/jdbc/demoDB</value>
+    </property>
+    </bean>
+
+    <!--<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">-->
+        <!--<property name="driverClassName" value="oracle.jdbc.driver.OracleDriver"/>-->
+        <!--<property name="url" value="jdbc:oracle:thin:@//133.37.135.125:1521/test5"/>-->
+        <!--<property name="username" value="inst_app"/>-->
+        <!--<property name="password" value="Test_567"/>-->
+    <!--</bean>-->
+
+    <!-- 导入Springjdbc -->
+    <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+        <!-- 引入数据源，也就是连接池配置 -->
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+
+    <bean id="helloRMIServiceImpl" class="com.gy.spring_rmi.HelloRMIServiceImpl"> </bean>
+
+    <bean name="/userHttpInvokerService" class="org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter">
+        <property name="service" ref="helloRMIServiceImpl"/>
+        <property name="serviceInterface" value="com.gy.spring_rmi.HelloRMIService"/>
+    </bean>
+
+    <bean id="userHttpInvokerServiceClient" class="org.springframework.remoting.httpinvoker.HttpInvokerProxyFactoryBean">
+        <property name="serviceUrl">
+            <value>http://localhost:8080/web/userHttpInvokerService</value>
+        </property>
+        <property name="serviceInterface">
+            <value>com.gy.spring_rmi.HelloRMIService</value>
+        </property>
+    </bean>
+
+
+    <!-- redis config start -->
+    <!-- 配置JedisPoolConfig实例 -->
+    <bean id="poolConfig" class="redis.clients.jedis.JedisPoolConfig">
+        <property name="maxIdle" value="${redis.maxIdle}" />
+        <property name="maxTotal" value="${redis.maxActive}" />
+        <property name="maxWaitMillis" value="${redis.maxWait}" />
+        <property name="testOnBorrow" value="${redis.testOnBorrow}" />
+    </bean>
+
+    <!-- 配置JedisConnectionFactory -->
+    <bean id="jedisConnectionFactory"
+          class="org.springframework.data.redis.connection.jedis.JedisConnectionFactory">
+        <property name="hostName" value="${redis.host}" />
+        <property name="port" value="${redis.port}" />
+        <!-- <property name="password" value="${redis.pass}" /> -->
+        <property name="database" value="${redis.dbIndex}" />
+        <property name="poolConfig" ref="poolConfig" />
+    </bean>
+
+    <!-- 配置RedisTemplate -->
+    <bean id="redisTemplate" class="org.springframework.data.redis.core.RedisTemplate">
+        <property name="connectionFactory" ref="jedisConnectionFactory" />
+    </bean>
+
+    <bean id="cacheManager123" class="org.springframework.data.redis.cache.RedisCacheManager">
+        <constructor-arg ref="redisTemplate" />
+    </bean>
+
+    <bean id="mqConnectionFactory" class="org.apache.activemq.spring.ActiveMQConnectionFactory">
+    </bean>
+
+    <bean id="jmsTemplate" class="org.springframework.jms.core.JmsTemplate" c:connectionFactory-ref="mqConnectionFactory">
+        <property name="deliveryMode" value="2"></property>
+        <!-- 发送模式  DeliveryMode.NON_PERSISTENT=1:非持久 ; DeliveryMode.PERSISTENT=2:持久-->
+        <property name="explicitQosEnabled" value="true"></property>
+        <!-- deliveryMode, priority, timeToLive 的开关，要生效，必须配置为true，默认false-->
+    </bean>
+
+    <bean id="queue" class="org.apache.activemq.command.ActiveMQQueue" c:name="test.queue" />
+
+    <bean id="topic" class="org.apache.activemq.command.ActiveMQTopic" c:name="test.topic" />
+
+    <bean id="testMDP" class="com.gy.mq.MDPTest" />
+
+    <!--<jms:listener-container connection-factory="mqConnectionFactory" >-->
+        <!--<jms:listener destination="test.queue" ref="testMDP" method="alertMsg" />-->
+    <!--</jms:listener-container>-->
+
+    <bean name="firstComplexJobDetail"    class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
+        <property name="jobClass" value="com.gy.quartz.QuatzTest" />
+        <!--<property name="jobDataMap">-->
+            <!--<map>-->
+                <!--<entry key="anotherBean" value-ref="anotherBean" />-->
+            <!--</map>-->
+        <!--</property>-->
+        <property name="durability" value="true" />
+    </bean>
+
+    <bean id="cronTrigger"  class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+        <property name="jobDetail" ref="firstComplexJobDetail" />
+        <!--<property name="cronExpression" value="0/5 * * ? * SAT-SUN" />-->
+        <property name="cronExpression" value="0/5 * 1 ? * *" />
+    </bean>
+
+    <bean id="schedulerFactoryBean"  class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+        <property name="triggers">
+            <list>
+                <!-- <ref bean="billsCheckJobTrigger"/> -->
+                <ref bean="cronTrigger"/>
+            </list>
+        </property>
+    </bean>
+
+
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource" />
+        <!-- 自动扫描mapping.xml文件 -->
+        <property name="mapperLocations" value="classpath:com/gy/transaction/dao/*.xml"></property>
+    </bean>
+
+     <!--DAO接口所在包名，Spring会自动查找其下的类-->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.gy.transaction.dao" />
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"></property>
+    </bean>
+
+    <!-- 开启事务控制的注解支持 -->
+    <tx:annotation-driven transaction-manager="transactionManager" proxy-target-class="false"/>
+
+    <!-- 把datasource委托给DataSourceTransactionManager-->
+    <bean id="transactionManager"
+          class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource" />
+    </bean>
+
+</beans>
