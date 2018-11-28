@@ -19,7 +19,7 @@ public class ActivemqQueueProducer {
                 "tcp://localhost:61616");
         connection = connectFactory.createConnection();
         //session = connection.createSession(true, Session.AUTO_ACKNOWLEDGE);//支持事务
-        session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);//不支持事务
+        session = connection.createSession(true, Session.AUTO_ACKNOWLEDGE);//不支持事务
 
         Destination destination =  session.createQueue("queue1");
         producer = session.createProducer(destination);
@@ -33,6 +33,7 @@ public class ActivemqQueueProducer {
         try {
             TextMessage text = session.createTextMessage(Message);
             producer.send(text);
+            session.commit();
             System.out.println("Sending message:"+text.getText());
         } catch (JMSException e) {
             // TODO Auto-generated catch block

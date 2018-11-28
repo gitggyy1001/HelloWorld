@@ -38,17 +38,12 @@ public class ActivemqQueueConsumer {
     public void recive()
     {
         try {
-            initialize();
             System.out.println("Consumer("+name+"):->Begin listening...");
             int count=0;
-            while(count<10)
-            {
-                Message message = consumer.receive(); //主动接收消息(同步)
-                System.out.println("consumer recive:"+((TextMessage)message).getText());
-                count++;
-                System.out.println(count);
-
-            }
+            Message message = consumer.receive(); //主动接收消息(同步)
+            System.out.println("consumer recive:"+((TextMessage)message).getText());
+            count++;
+            System.out.println(count);
         } catch (JMSException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

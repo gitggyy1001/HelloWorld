@@ -28,7 +28,6 @@ public class Sender {
 
         // 第一个参数设置为true，表示开启事务
         // 开启事务后，记得要手动提交事务
-
         Session session = connection.createSession(Boolean.TRUE,
                 Session.AUTO_ACKNOWLEDGE);
 

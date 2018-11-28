@@ -1,4 +1,7 @@
 package com.gy.mq;
+
+import org.apache.activemq.ActiveMQConnectionFactory;
+
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
@@ -9,31 +12,28 @@ import javax.jms.MessageListener;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
-import org.apache.activemq.ActiveMQConnectionFactory;
 /**
- * Created by hello on 2018/5/8.
- * 异步
+ * Created by hello on 2018/11/27.
  */
-public class ActivemqQueueConsumerAsyn implements MessageListener{
+public class ActivemqVirtualTopitConsumerCust implements MessageListener {
     private String name = "";
     private Connection connection = null;
     private Session session = null;
     private MessageConsumer consumer = null;
-    ActivemqQueueConsumerAsyn(String name){
+    ActivemqVirtualTopitConsumerCust(String name){
         this.name=name;
     }
 
-    public ActivemqQueueConsumerAsyn(){}
+    public ActivemqVirtualTopitConsumerCust(){}
 
     public  void initialize() throws JMSException
     {ConnectionFactory connectFactory = new ActiveMQConnectionFactory(
             "tcp://localhost:61616");
         Connection connection = connectFactory.createConnection();
         session = connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
-        Destination destination =  session.createQueue("queue1");
+        Destination destination =  session.createQueue("Consumer.cust.VirtualTopic.test");
         consumer = session.createConsumer(destination);
         connection.start();
-
     }
 
     public void recive()
@@ -81,14 +81,13 @@ public class ActivemqQueueConsumerAsyn implements MessageListener{
     }
 
     public static void main(String[] args) {
-        ActivemqQueueConsumerAsyn activemqQueueConsumerAsyn = new ActivemqQueueConsumerAsyn();
+        ActivemqVirtualTopitConsumerCust activemqVirtualTopitConsumerCust = new ActivemqVirtualTopitConsumerCust();
         try {
-            activemqQueueConsumerAsyn.initialize();
-            activemqQueueConsumerAsyn.recive();
+            activemqVirtualTopitConsumerCust.initialize();
+            activemqVirtualTopitConsumerCust.recive();
         } catch (JMSException e) {
             e.printStackTrace();
         }
 
     }
-
 }
